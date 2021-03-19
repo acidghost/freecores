@@ -91,7 +91,13 @@ fn get(opts: &Opts) -> io::Result<impl Iterator<Item = &u32>> {
 }
 
 fn taken_core(re: &Regex, path: impl AsRef<std::path::Path>) -> io::Result<Option<u32>> {
-    let file = fs::File::open(path)?;
+    let file = match fs::File::open(path) {
+        Ok(file) => file,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            return Ok(None);
+        }
+        Err(e) => return Err(e),
+    };
     let rd = io::BufReader::new(file);
     let mut has_vmsize = false;
     let mut core = None::<u32>;
